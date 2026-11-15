@@ -26,7 +26,7 @@ Simply double-click **`BrandItStats.app`** or **`run.command`** in Finder.
 
 ### Option B: Terminal
 ```bash
-open "/Users/mac/Applications/YouTube Channel Desktop Widget/BrandItStats.app"
+open BrandItStats.app
 ```
 
 ---
@@ -36,7 +36,7 @@ open "/Users/mac/Applications/YouTube Channel Desktop Widget/BrandItStats.app"
 ### Method 1: Automated (One-Click)
 Double-click **`add-to-login-items.command`** in this folder, or run:
 ```bash
-"/Users/mac/Applications/YouTube Channel Desktop Widget/add-to-login-items.command"
+./add-to-login-items.command
 ```
 
 ### Method 2: Manual (macOS System Settings)
@@ -44,7 +44,7 @@ Double-click **`add-to-login-items.command`** in this folder, or run:
 2. Navigate to **General** > **Login Items & Extensions**.
 3. Under the **Open at Login** section, click the **`+`** button.
 4. Select `BrandItStats.app` from:
-   `~/Applications/YouTube Channel Desktop Widget/BrandItStats.app`
+   `BrandItStats.app`
 5. Click **Open**. It will now launch automatically every time you log in to your Mac.
 
 ---
