@@ -37,7 +37,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     
     private func setupPopover() {
         popover = NSPopover()
-        popover.contentSize = NSSize(width: 340, height: 440)
+        popover.contentSize = NSSize(width: 360, height: 490)
         popover.behavior = .transient
         popover.animates = true
         
@@ -51,7 +51,10 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
             }
         )
         
-        popover.contentViewController = NSHostingController(rootView: popoverView)
+        let hostingController = NSHostingController(rootView: popoverView)
+        hostingController.view.wantsLayer = true
+        hostingController.view.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
+        popover.contentViewController = hostingController
     }
     
     private func observeStats() {

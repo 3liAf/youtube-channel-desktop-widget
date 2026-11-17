@@ -31,12 +31,13 @@ public struct PopoverView: View {
                     
                     Text("Settings & Accounts")
                         .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(.primary)
                     
                     Spacer()
                     
                     Button(action: { fetcher.isShowingSettings = false }) {
                         Text("Done")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(.system(size: 12, weight: .bold))
                             .foregroundColor(.red)
                     }
                     .buttonStyle(.plain)
@@ -103,11 +104,15 @@ public struct PopoverView: View {
                         }
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
-                        .background(Color.primary.opacity(0.06))
+                        .background(Color(NSColor.controlBackgroundColor))
                         .cornerRadius(8)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color.primary.opacity(0.1), lineWidth: 1)
+                        )
                     }
                     .menuStyle(.borderlessButton)
-                    .frame(maxWidth: 200, alignment: .leading)
+                    .frame(maxWidth: 210, alignment: .leading)
                     
                     Spacer()
                     
@@ -160,7 +165,7 @@ public struct PopoverView: View {
                     })
                     .padding(16)
                 }
-                .frame(maxHeight: 380)
+                .frame(maxHeight: 400)
             } else if let active = fetcher.activeChannel {
                 SingleChannelView(
                     stats: active,
@@ -200,9 +205,10 @@ public struct PopoverView: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
-            .background(Color.primary.opacity(0.02))
+            .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
         }
-        .frame(width: 340)
+        .frame(width: 360)
+        .background(Color(NSColor.windowBackgroundColor))
     }
     
     private func timeFormatted(_ date: Date) -> String {
@@ -321,8 +327,12 @@ public struct SingleChannelView: View {
                     .foregroundColor(.secondary)
             }
             .padding(10)
-            .background(Color.primary.opacity(0.04))
+            .background(Color(NSColor.controlBackgroundColor))
             .cornerRadius(10)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+            )
             
             // Action Links
             HStack(spacing: 8) {
@@ -421,8 +431,12 @@ public struct CombinedStatsView: View {
                     .foregroundColor(.secondary)
             }
             .padding(10)
-            .background(Color.primary.opacity(0.04))
+            .background(Color(NSColor.controlBackgroundColor))
             .cornerRadius(10)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+            )
             
             // Account Breakdown Header
             HStack {
@@ -448,18 +462,19 @@ public struct CombinedStatsView: View {
                                         Circle().fill(Color.red.opacity(0.8))
                                     }
                                 }
-                                .frame(width: 30, height: 30)
+                                .frame(width: 32, height: 32)
                                 .clipShape(Circle())
                             } else {
                                 Circle()
                                     .fill(Color.red.opacity(0.8))
-                                    .frame(width: 30, height: 30)
-                                    .overlay(Image(systemName: "play.fill").font(.system(size: 10)).foregroundColor(.white))
+                                    .frame(width: 32, height: 32)
+                                    .overlay(Image(systemName: "play.fill").font(.system(size: 11)).foregroundColor(.white))
                             }
                             
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(ch.title.isEmpty ? ch.handle : ch.title)
                                     .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(.primary)
                                     .lineLimit(1)
                                 Text(ch.handle)
                                     .font(.system(size: 10))
@@ -481,9 +496,13 @@ public struct CombinedStatsView: View {
                                 .font(.system(size: 9, weight: .semibold))
                                 .foregroundColor(.secondary)
                         }
-                        .padding(8)
-                        .background(Color.primary.opacity(0.03))
+                        .padding(10)
+                        .background(Color(NSColor.controlBackgroundColor))
                         .cornerRadius(8)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color.primary.opacity(0.06), lineWidth: 1)
+                        )
                     }
                     .buttonStyle(.plain)
                 }
@@ -500,9 +519,9 @@ public struct SettingsView: View {
     
     public var body: some View {
         ScrollView(.vertical, showsIndicators: true) {
-            VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 16) {
                 // Section 1: Add New Account
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 10) {
                     Label("Add YouTube Account", systemImage: "person.badge.plus")
                         .font(.system(size: 12, weight: .bold))
                         .foregroundColor(.primary)
@@ -530,7 +549,7 @@ public struct SettingsView: View {
                                     .controlSize(.small)
                             } else {
                                 Text("Add")
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(.system(size: 12, weight: .bold))
                             }
                         }
                         .buttonStyle(.borderedProminent)
@@ -543,19 +562,25 @@ public struct SettingsView: View {
                             .font(.system(size: 11))
                             .foregroundColor(fetcher.addAccountError ? .red : .green)
                     } else {
-                        Text("Enter any channel handle (e.g. @MrBeast, @SecretBlox, @BrandItQuiz) or channel link.")
+                        Text("Enter any channel handle (e.g. @MrBeast, @BrandItQuiz) or channel URL.")
                             .font(.system(size: 10))
                             .foregroundColor(.secondary)
                     }
                 }
                 .padding(12)
-                .background(Color.primary.opacity(0.03))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color(NSColor.controlBackgroundColor))
                 .cornerRadius(10)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                )
                 
                 // Section 2: Manage Existing Accounts
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 10) {
                     Label("Configured Accounts (\(fetcher.channels.count))", systemImage: "list.bullet.rectangle")
                         .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(.primary)
                     
                     VStack(spacing: 6) {
                         ForEach(fetcher.channels) { ch in
@@ -568,18 +593,19 @@ public struct SettingsView: View {
                                             Circle().fill(Color.red.opacity(0.8))
                                         }
                                     }
-                                    .frame(width: 26, height: 26)
+                                    .frame(width: 28, height: 28)
                                     .clipShape(Circle())
                                 } else {
                                     Circle()
                                         .fill(Color.red.opacity(0.8))
-                                        .frame(width: 26, height: 26)
+                                        .frame(width: 28, height: 28)
                                         .overlay(Image(systemName: "play.fill").font(.system(size: 9)).foregroundColor(.white))
                                 }
                                 
                                 VStack(alignment: .leading, spacing: 1) {
                                     Text(ch.title.isEmpty ? ch.handle : ch.title)
                                         .font(.system(size: 11, weight: .semibold))
+                                        .foregroundColor(.primary)
                                         .lineLimit(1)
                                     Text(ch.handle)
                                         .font(.system(size: 9))
@@ -610,32 +636,44 @@ public struct SettingsView: View {
                                         fetcher.removeChannel(id: ch.id)
                                     }) {
                                         Image(systemName: "trash")
-                                            .font(.system(size: 10))
-                                            .foregroundColor(.red.opacity(0.8))
+                                            .font(.system(size: 11))
+                                            .foregroundColor(.red.opacity(0.85))
                                     }
                                     .buttonStyle(.plain)
                                     .help("Remove account")
                                 }
                             }
                             .padding(8)
-                            .background(Color.primary.opacity(0.02))
+                            .background(Color(NSColor.windowBackgroundColor).opacity(0.7))
                             .cornerRadius(8)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color.primary.opacity(0.06), lineWidth: 1)
+                            )
                         }
                     }
                 }
                 .padding(12)
-                .background(Color.primary.opacity(0.03))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color(NSColor.controlBackgroundColor))
                 .cornerRadius(10)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                )
                 
                 // Section 3: Menu Bar Display Settings
                 VStack(alignment: .leading, spacing: 10) {
                     Label("Menu Bar Display", systemImage: "menubar.rectangle")
                         .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(.primary)
                     
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Status Text Format:")
-                            .font(.system(size: 10, weight: .medium))
+                    HStack {
+                        Text("Display Format:")
+                            .font(.system(size: 11))
                             .foregroundColor(.secondary)
+                        
+                        Spacer()
                         
                         Picker("", selection: Binding(
                             get: { fetcher.menuBarMode },
@@ -645,8 +683,11 @@ public struct SettingsView: View {
                                 Text(mode.rawValue).tag(mode)
                             }
                         }
-                        .pickerStyle(.segmented)
+                        .pickerStyle(.menu)
+                        .frame(maxWidth: 180)
                     }
+                    
+                    Divider()
                     
                     Toggle("Show channel handle in menu bar", isOn: Binding(
                         get: { fetcher.showHandleInMenuBar },
@@ -655,52 +696,86 @@ public struct SettingsView: View {
                     .font(.system(size: 11))
                 }
                 .padding(12)
-                .background(Color.primary.opacity(0.03))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color(NSColor.controlBackgroundColor))
                 .cornerRadius(10)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                )
                 
                 // Section 4: Refresh Interval
                 VStack(alignment: .leading, spacing: 10) {
                     Label("Auto-Refresh Frequency", systemImage: "clock.arrow.circlepath")
                         .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(.primary)
                     
-                    Picker("Interval", selection: Binding(
-                        get: { fetcher.refreshIntervalMinutes },
-                        set: { fetcher.setRefreshInterval($0) }
-                    )) {
-                        Text("2 Minutes").tag(2)
-                        Text("5 Minutes").tag(5)
-                        Text("15 Minutes").tag(15)
-                        Text("30 Minutes").tag(30)
-                        Text("1 Hour").tag(60)
+                    HStack {
+                        Text("Update Interval:")
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
+                        
+                        Spacer()
+                        
+                        Picker("", selection: Binding(
+                            get: { fetcher.refreshIntervalMinutes },
+                            set: { fetcher.setRefreshInterval($0) }
+                        )) {
+                            Text("2 Minutes").tag(2)
+                            Text("5 Minutes").tag(5)
+                            Text("15 Minutes").tag(15)
+                            Text("30 Minutes").tag(30)
+                            Text("1 Hour").tag(60)
+                        }
+                        .pickerStyle(.menu)
+                        .frame(maxWidth: 160)
                     }
-                    .pickerStyle(.menu)
-                    .font(.system(size: 11))
                 }
                 .padding(12)
-                .background(Color.primary.opacity(0.03))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color(NSColor.controlBackgroundColor))
                 .cornerRadius(10)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                )
                 
                 // Section 5: Desktop Widget Preference
                 VStack(alignment: .leading, spacing: 10) {
                     Label("Desktop Floating Widget", systemImage: "macwindow")
                         .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(.primary)
                     
-                    Picker("Widget Data Source", selection: Binding(
-                        get: { fetcher.desktopWidgetMode },
-                        set: { fetcher.setDesktopWidgetMode($0) }
-                    )) {
-                        Text("Active Channel").tag(DesktopWidgetMode.activeChannel)
-                        Text("Combined All Accounts").tag(DesktopWidgetMode.combinedTotal)
+                    HStack {
+                        Text("Widget Data Source:")
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
+                        
+                        Spacer()
+                        
+                        Picker("", selection: Binding(
+                            get: { fetcher.desktopWidgetMode },
+                            set: { fetcher.setDesktopWidgetMode($0) }
+                        )) {
+                            Text("Active Channel").tag(DesktopWidgetMode.activeChannel)
+                            Text("Combined (All Accounts)").tag(DesktopWidgetMode.combinedTotal)
+                        }
+                        .pickerStyle(.menu)
+                        .frame(maxWidth: 180)
                     }
-                    .pickerStyle(.segmented)
                 }
                 .padding(12)
-                .background(Color.primary.opacity(0.03))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color(NSColor.controlBackgroundColor))
                 .cornerRadius(10)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                )
             }
             .padding(16)
         }
-        .frame(maxHeight: 380)
+        .frame(width: 360, height: 400)
     }
 }
 
@@ -730,8 +805,12 @@ public struct StatCard: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.primary.opacity(0.04))
+        .background(Color(NSColor.controlBackgroundColor))
         .cornerRadius(10)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+        )
     }
 }
 
@@ -758,6 +837,7 @@ public struct DesktopWidgetView: View {
                     VStack(alignment: .leading, spacing: 1) {
                         Text("Combined Network")
                             .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(.primary)
                         Text("\(fetcher.channels.count) Accounts")
                             .font(.system(size: 10))
                             .foregroundColor(.secondary)
@@ -778,6 +858,7 @@ public struct DesktopWidgetView: View {
                     VStack(alignment: .leading, spacing: 1) {
                         Text(active.title.isEmpty ? active.handle : active.title)
                             .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(.primary)
                             .lineLimit(1)
                         Text(active.handle)
                             .font(.system(size: 10))
