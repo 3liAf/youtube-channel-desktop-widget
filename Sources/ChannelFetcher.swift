@@ -55,6 +55,22 @@ public struct ChannelStats: Identifiable, Codable, Equatable {
         self.errorMessage = errorMessage
     }
     
+    public var shortName: String {
+        if !title.isEmpty {
+            let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+            let parts = trimmed.components(separatedBy: " ")
+            if let first = parts.first, !first.isEmpty && first.count <= 10 {
+                return first
+            }
+            return String(trimmed.prefix(8))
+        }
+        let h = handle.replacingOccurrences(of: "@", with: "")
+        if h.lowercased().hasSuffix("quiz") && h.count > 4 {
+            return String(h.dropLast(4))
+        }
+        return h
+    }
+    
     public var nextMilestone: Int {
         let count = subscriberCount
         if count < 10 { return 10 }
@@ -587,8 +603,8 @@ public class ChannelFetcher: ObservableObject {
             self.refreshIntervalMinutes = decoded.refreshIntervalMinutes
             self.desktopWidgetMode = decoded.desktopWidgetMode
         } else {
-            // Default seed: BrandIt
-            let initial = ChannelStats(
+            // Seed BrandIt
+            let brandIt = ChannelStats(
                 id: UUID(),
                 handle: "@BrandItQuiz",
                 title: "BrandIt",
@@ -599,14 +615,38 @@ public class ChannelFetcher: ObservableObject {
                 videoCount: 46,
                 avatarURL: "https://yt3.googleusercontent.com/DcLhn9Zmm9S6qGMKf3_FU_7rUWSxiH8-KwivFtmiEZiw6V9aUntxqEJaIOvZ3SlEa0Fg3xYhiQ=s176-c-k-c0x00ffffff-no-rj"
             )
-            self.channels = [initial]
-            self.selectedChannelId = initial.id
+            self.channels = [brandIt]
+            self.selectedChannelId = brandIt.id
             self.isCombinedView = false
             self.menuBarMode = .activeChannel
             self.showHandleInMenuBar = true
             self.refreshIntervalMinutes = 15
             self.desktopWidgetMode = .activeChannel
-            saveSettings()
         }
+        
+        // Ensure ALL user channels are automatically included
+        let defaultUserChannels: [(handle: String, title: String, channelId: String)] = [
+            ("@BrandItQuiz", "BrandIt", "UCGxLUVCSm111wtkU97R7hrw"),
+            ("@SecretBlox", "SecretBlox", "UCy37scMlHjvK2PS3m7aIK4g")
+        ]
+        
+        for ch in defaultUserChannels {
+            if !self.channels.contains(where: { $0.handle.lowercased() == ch.handle.lowercased() }) {
+                let newCh = ChannelStats(
+                    id: UUID(),
+                    handle: ch.handle,
+                    title: ch.title,
+                    channelId: ch.channelId,
+                    subscribersText: "Loading...",
+                    subscriberCount: 0,
+                    videosText: "Loading...",
+                    videoCount: 0,
+                    avatarURL: nil
+                )
+                self.channels.append(newCh)
+            }
+        }
+        
+        saveSettings()
     }
 }

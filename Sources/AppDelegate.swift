@@ -23,7 +23,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         
         if let button = statusItem.button {
-            let config = NSImage.SymbolConfiguration(pointSize: 12, weight: .semibold)
+            // Smaller, sleeker native icon matching macOS menu bar standards
+            let config = NSImage.SymbolConfiguration(pointSize: 9.5, weight: .medium)
             let image = NSImage(systemSymbolName: "play.rectangle.fill", accessibilityDescription: "YouTube Stats")?
                 .withSymbolConfiguration(config)
             
@@ -82,7 +83,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
                 let subShort = active.subscribersText
                     .replacingOccurrences(of: " subscriber", with: "")
                     .replacingOccurrences(of: "s", with: "")
-                button.title = " \(subShort)"
+                button.title = " \(active.shortName): \(subShort)"
             } else {
                 button.title = " --"
             }
@@ -102,8 +103,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
                     .replacingOccurrences(of: "s", with: "")
                 let plural = (subShort == "1") ? "Sub" : "Subs"
                 
-                if fetcher.showHandleInMenuBar && !active.handle.isEmpty {
-                    button.title = " \(active.handle): \(subShort) \(plural)"
+                if fetcher.showHandleInMenuBar {
+                    // Use clean short name (e.g. "BrandIt" or "SecretBlox") instead of long @handle
+                    button.title = " \(active.shortName): \(subShort) \(plural)"
                 } else {
                     button.title = " \(subShort) \(plural)"
                 }
