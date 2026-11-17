@@ -286,19 +286,19 @@ public class ChannelFetcher: ObservableObject {
     }
     
     public func addChannel(rawInput: String) async -> (success: Bool, message: String) {
-        let handle = cleanHandleInput(rawInput)
-        guard !handle.isEmpty else {
-            return (false, "Please enter a valid channel handle or URL.")
+        let path = cleanPathInput(rawInput)
+        guard !path.isEmpty else {
+            return (false, "Please enter a valid channel handle, URL, or Channel ID.")
         }
         
-        if channels.contains(where: { $0.handle.lowercased() == handle.lowercased() }) {
-            return (false, "Account \(handle) is already in your list.")
+        if channels.contains(where: { $0.handle.lowercased() == path.lowercased() || $0.channelId == path }) {
+            return (false, "Channel is already in your list.")
         }
         
         var newStats = ChannelStats(
             id: UUID(),
-            handle: handle,
-            title: handle,
+            handle: path,
+            title: path,
             channelId: "",
             subscribersText: "Loading...",
             subscriberCount: 0,
@@ -309,9 +309,10 @@ public class ChannelFetcher: ObservableObject {
         )
         
         do {
-            let fetched = try await fetchChannelData(handle: handle)
+            let fetched = try await fetchChannelData(handleOrPath: path)
             newStats.title = fetched.title
             newStats.channelId = fetched.channelId
+            newStats.handle = fetched.handle
             newStats.subscribersText = fetched.subscribersText
             newStats.subscriberCount = fetched.subscriberCount
             newStats.videosText = fetched.videosText
@@ -321,13 +322,18 @@ public class ChannelFetcher: ObservableObject {
             newStats.isLoading = false
             newStats.errorMessage = nil
             
+            // Check again in case canonical handle matched existing
+            if channels.contains(where: { $0.handle.lowercased() == newStats.handle.lowercased() }) {
+                return (false, "Account \(newStats.handle) is already in your list.")
+            }
+            
             channels.append(newStats)
             selectedChannelId = newStats.id
             isCombinedView = false
             saveSettings()
             return (true, "Added \(newStats.title) (\(newStats.handle)) successfully!")
         } catch {
-            return (false, "Could not find YouTube channel for \(handle): \(error.localizedDescription)")
+            return (false, "Could not find YouTube channel: \(error.localizedDescription)")
         }
     }
     
@@ -348,9 +354,12 @@ public class ChannelFetcher: ObservableObject {
             let ch = channels[i]
             channels[i].isLoading = true
             do {
-                let fetched = try await fetchChannelData(handle: ch.handle)
+                let fetched = try await fetchChannelData(handleOrPath: ch.handle.isEmpty ? ch.channelId : ch.handle)
                 channels[i].title = fetched.title
                 channels[i].channelId = fetched.channelId.isEmpty ? channels[i].channelId : fetched.channelId
+                if !fetched.handle.isEmpty {
+                    channels[i].handle = fetched.handle
+                }
                 channels[i].subscribersText = fetched.subscribersText
                 channels[i].subscriberCount = fetched.subscriberCount
                 channels[i].videosText = fetched.videosText
@@ -373,9 +382,13 @@ public class ChannelFetcher: ObservableObject {
         guard let idx = channels.firstIndex(where: { $0.id == id }) else { return }
         channels[idx].isLoading = true
         do {
-            let fetched = try await fetchChannelData(handle: channels[idx].handle)
+            let ch = channels[idx]
+            let fetched = try await fetchChannelData(handleOrPath: ch.handle.isEmpty ? ch.channelId : ch.handle)
             channels[idx].title = fetched.title
             channels[idx].channelId = fetched.channelId.isEmpty ? channels[idx].channelId : fetched.channelId
+            if !fetched.handle.isEmpty {
+                channels[idx].handle = fetched.handle
+            }
             channels[idx].subscribersText = fetched.subscribersText
             channels[idx].subscriberCount = fetched.subscriberCount
             channels[idx].videosText = fetched.videosText
@@ -393,9 +406,9 @@ public class ChannelFetcher: ObservableObject {
     
     // MARK: - Scraping Engine
     
-    private func fetchChannelData(handle: String) async throws -> (title: String, channelId: String, subscribersText: String, subscriberCount: Int, videosText: String, videoCount: Int, avatarURL: String?) {
-        let cleanHandle = handle.hasPrefix("@") ? handle : "@\(handle)"
-        guard let url = URL(string: "https://www.youtube.com/\(cleanHandle)?cbrd=1&ucbcb=1") else {
+    private func fetchChannelData(handleOrPath: String) async throws -> (title: String, channelId: String, handle: String, subscribersText: String, subscriberCount: Int, videosText: String, videoCount: Int, avatarURL: String?) {
+        let cleanPath = cleanPathInput(handleOrPath)
+        guard let url = URL(string: "https://www.youtube.com/\(cleanPath)?cbrd=1&ucbcb=1") else {
             throw NSError(domain: "BrandItStats", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid URL for handle"])
         }
         
@@ -413,8 +426,9 @@ public class ChannelFetcher: ObservableObject {
             throw NSError(domain: "BrandItStats", code: 500, userInfo: [NSLocalizedDescriptionKey: "Could not read YouTube page response"])
         }
         
-        var parsedTitle: String = cleanHandle
+        var parsedTitle: String = cleanPath
         var parsedChannelId: String = ""
+        var parsedHandle: String = cleanPath.hasPrefix("@") ? cleanPath : ""
         var parsedSubscribersText: String = "0 subscribers"
         var parsedSubscriberCount: Int = 0
         var parsedVideosText: String = "0 videos"
@@ -437,6 +451,9 @@ public class ChannelFetcher: ObservableObject {
                         }
                         if let cid = channelMeta["externalId"] as? String, !cid.isEmpty {
                             parsedChannelId = cid
+                        }
+                        if let vanity = channelMeta["vanityChannelUrl"] as? String, let atIdx = vanity.range(of: "@") {
+                            parsedHandle = String(vanity[atIdx.lowerBound...])
                         }
                     }
                     
@@ -464,7 +481,9 @@ public class ChannelFetcher: ObservableObject {
                                         if let textDict = p["text"] as? [String: Any],
                                            let contentStr = textDict["content"] as? String {
                                             let lower = contentStr.lowercased()
-                                            if lower.contains("sub") {
+                                            if contentStr.hasPrefix("@") {
+                                                parsedHandle = contentStr
+                                            } else if lower.contains("sub") {
                                                 parsedSubscribersText = contentStr
                                                 parsedSubscriberCount = parseCount(contentStr)
                                             } else if lower.contains("vid") {
@@ -530,9 +549,14 @@ public class ChannelFetcher: ObservableObject {
             }
         }
         
+        if parsedHandle.isEmpty {
+            parsedHandle = cleanPath.hasPrefix("@") ? cleanPath : "@\(cleanPath)"
+        }
+        
         return (
             title: parsedTitle,
             channelId: parsedChannelId,
+            handle: parsedHandle,
             subscribersText: parsedSubscribersText,
             subscriberCount: parsedSubscriberCount,
             videosText: parsedVideosText,
@@ -541,18 +565,25 @@ public class ChannelFetcher: ObservableObject {
         )
     }
     
-    private func cleanHandleInput(_ input: String) -> String {
+    private func cleanPathInput(_ input: String) -> String {
         var str = input.trimmingCharacters(in: .whitespacesAndNewlines)
         if str.hasPrefix("https://") || str.hasPrefix("http://") || str.contains("youtube.com") {
             if let url = URL(string: str) {
-                let pathComponents = url.pathComponents.filter { $0 != "/" }
-                for comp in pathComponents {
-                    if comp.hasPrefix("@") {
-                        str = comp
-                        break
-                    }
+                let path = url.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+                if path.hasPrefix("@") {
+                    return path
+                } else if path.hasPrefix("channel/") {
+                    return path
+                } else if !path.isEmpty {
+                    str = path
                 }
             }
+        }
+        if str.hasPrefix("UC") && str.count >= 20 {
+            return "channel/\(str)"
+        }
+        if str.hasPrefix("channel/UC") {
+            return str
         }
         if !str.hasPrefix("@") {
             str = "@" + str
@@ -622,29 +653,6 @@ public class ChannelFetcher: ObservableObject {
             self.showHandleInMenuBar = true
             self.refreshIntervalMinutes = 15
             self.desktopWidgetMode = .activeChannel
-        }
-        
-        // Ensure ALL user channels are automatically included
-        let defaultUserChannels: [(handle: String, title: String, channelId: String)] = [
-            ("@BrandItQuiz", "BrandIt", "UCGxLUVCSm111wtkU97R7hrw"),
-            ("@SecretBlox", "SecretBlox", "UCy37scMlHjvK2PS3m7aIK4g")
-        ]
-        
-        for ch in defaultUserChannels {
-            if !self.channels.contains(where: { $0.handle.lowercased() == ch.handle.lowercased() }) {
-                let newCh = ChannelStats(
-                    id: UUID(),
-                    handle: ch.handle,
-                    title: ch.title,
-                    channelId: ch.channelId,
-                    subscribersText: "Loading...",
-                    subscriberCount: 0,
-                    videosText: "Loading...",
-                    videoCount: 0,
-                    avatarURL: nil
-                )
-                self.channels.append(newCh)
-            }
         }
         
         saveSettings()
